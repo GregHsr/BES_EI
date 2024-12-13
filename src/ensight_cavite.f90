@@ -235,8 +235,8 @@ END SUBROUTINE write_result_ensight
    10 format('FORMAT'            ,/ ,'type: ensight gold',//,'GEOMETRY'          ,/ ,'model:	',A         ,//,'VARIABLE')
 
       do i=1,nbVar
-        if(VarType(i).eq.1) write(FileUnit,15)trim(Varname(i)),trim(Varname(i))//'*******.scl'
-        if(VarType(i).eq.2) write(FileUnit,25)trim(Varname(i)),trim(Varname(i))//'*******.vec'
+        if(VarType(i).eq.1) write(FileUnit,15)trim(Varname(i)),trim(Varname(i))//'******.scl'
+        if(VarType(i).eq.2) write(FileUnit,25)trim(Varname(i)),trim(Varname(i))//'******.vec'
       enddo
       
       write(FileUnit,45) nfile,isto,isto
@@ -247,7 +247,7 @@ END SUBROUTINE write_result_ensight
    15 format('scalar per node: ',A,'   ', A)
    25 format('vector per node: ',A,'   ', A)
 
-   45 format(/,'TIME            '      ,/,'time set: 1     '      ,/,'number of steps:'      ,i6 ,/, &
+   45 format(/,'TIME            '      ,/,'time set: 1     '      ,/,'number of steps:'      ,i7 ,/, &
    'filename start number:',i10/,'filename increment:'   ,i10/,'time values: ')
 
       end subroutine

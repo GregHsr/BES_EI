@@ -78,7 +78,6 @@ do j=1,3
 end do
 	
 do i=1,n
-	
 	L(i,2)=coef(i,2)
 	do j=4,5
 		col=Ldiag(j)
@@ -91,7 +90,6 @@ do i=1,n
 		L(i,4)=-L(i-1,3)*L(i-1,2)
 		L(i,5)=-L(i-1,4)*L(i-1,2)
 	end if
-
 end do
 
 norm0=norm2(b,n)
@@ -104,206 +102,164 @@ do i=1,n; b(i)=b(i)*L(i,1); end do
 !    GRADIENT CONJUGUE                              !
 !---------------------------------------------------!
 
-	call matmul_ell(p,coef,jcoef,x,n,m)
-	do i=1,n; r(i)=b(i)-p(i); end do
+call matmul_ell(p,coef,jcoef,x,n,m)
+do i=1,n; r(i)=b(i)-p(i); end do
 
-	call resLU_ell5(r2,L,Ldiag,r,n) 
-
-	p=r2
-	nu=scal(r,r2,n)
-
+call resLU_ell5(r2,L,Ldiag,r,n) 
+p=r2
+nu=scal(r,r2,n)
+norm=0.
+do i=1,n; norm=norm+r(i)*r(i)*s(i); end do
+norm=sqrt(norm)/norm0
+j=0
+do while (norm > eps .and. j.lt.itmax)
+	j=j+1
+	call matmul_ell(q,coef,jcoef,p,n,m)
+	alpha=nu/scal(p,q,n)
+	
+	do i=1,n; x(i)=x(i)+alpha*p(i); end do
+	do i=1,n; r(i)=r(i)-alpha*q(i); end do
+	call resLU_ell5(r2,L,Ldiag,r,n)
+	mu=scal(r,r2,n)
+	beta=mu/nu
+	do i=1,n; p(i)=r2(i)+beta*p(i); end do
+	nu=mu
 	norm=0.
 	do i=1,n; norm=norm+r(i)*r(i)*s(i); end do
 	norm=sqrt(norm)/norm0
-
-	j=0
-
-	do while (norm > eps .and. j.lt.itmax)
-		
-		j=j+1
-
-		call matmul_ell(q,coef,jcoef,p,n,m)
-
-		alpha=nu/scal(p,q,n)
-		
-		do i=1,n; x(i)=x(i)+alpha*p(i); end do
-		do i=1,n; r(i)=r(i)-alpha*q(i); end do
-
-		call resLU_ell5(r2,L,Ldiag,r,n)
-
-		mu=scal(r,r2,n)
-
-		beta=mu/nu
-
-		do i=1,n; p(i)=r2(i)+beta*p(i); end do
-
-		nu=mu
-
-		norm=0.
-		do i=1,n; norm=norm+r(i)*r(i)*s(i); end do
-		norm=sqrt(norm)/norm0
-
-	end do
+end do
 
 !---------------------------------------------------!
 !    SCALING DE LA SOLUTION                         !
 !---------------------------------------------------!
 
-	do i=1,n; x(i)=x(i)*L(i,1); end do
-
-        if(j.ge.itmax) then
-	   print*, 'non convergence apres =', j,norm
-        else
-	   print*, ' Nombre Iterations ICCG2 ( Fill-In 2 ) =', j
+do i=1,n; x(i)=x(i)*L(i,1); end do
+    if(j.ge.itmax) then
+   		print*, 'non convergence apres =', j,norm
+    else
+   		print*, ' Nombre Iterations ICCG2 ( Fill-In 2 ) =', j
 	endif
-	return
+return
 
 END SUBROUTINE ICCG2
 
 
-
-
-
 SUBROUTINE resLU_ell5(x,L,Ldiag,y,n)
 
-	implicit none
+implicit none
+integer, intent(in) :: n
+real*8, dimension(n,5), intent (in) :: L
+integer, dimension(5), intent(in) :: Ldiag
+real*8, dimension(n), intent(in) :: y
+real*8, dimension(n), intent(out) :: x
 
-	integer, intent(in) :: n
-	real*8, dimension(n,5), intent (in) :: L
-	integer, dimension(5), intent(in) :: Ldiag
-	real*8, dimension(n), intent(in) :: y
-	real*8, dimension(n), intent(out) :: x
-	
-	integer :: i,j,col1,col2,col3,col4,col5,col6
-	
-	col1=Ldiag(2)
-	col2=Ldiag(5)
-	col3=Ldiag(4)
-	col4=Ldiag(3)
+integer :: i,j,col1,col2,col3,col4,col5,col6
 
-	do i=1,col1
-		x(i)=y(i)
-	end do
-	
-	do i=col1+1,col2
-		x(i)=y(i)-L(i-col1,2)*x(i-col1)
-	end do
-	
-	do i=col2+1,col3
-		x(i)=y(i)-L(i-col1,2)*x(i-col1)-L(i-col2,5)*x(i-col2)
-	end do
+col1=Ldiag(2)
+col2=Ldiag(5)
+col3=Ldiag(4)
+col4=Ldiag(3)
+do i=1,col1
+	x(i)=y(i)
+end do
 
-	do i=col3+1,col4
-		x(i)=y(i)-L(i-col1,2)*x(i-col1)-L(i-col2,5)*x(i-col2)&
-		         -L(i-col3,4)*x(i-col3)
-	end do
-	
-	do i=col4+1,n
-		x(i)=y(i)-L(i-col1,2)*x(i-col1)-L(i-col2,5)*x(i-col2)&
-		         -L(i-col3,4)*x(i-col3)-L(i-col4,3)*x(i-col4)
-	end do
+do i=col1+1,col2
+	x(i)=y(i)-L(i-col1,2)*x(i-col1)
+end do
 
-	do i=n-col1,n-col2+1,-1
-		x(i)=x(i)-L(i,2)*x(i+col1)
-	end do
-	
-	do i=n-col2,n-col3+1,-1
-		x(i)=x(i)-L(i,2)*x(i+col1)-L(i,5)*x(i+col2)
-	end do
-	
-	do i=n-col3,n-col4+1,-1
-		x(i)=x(i)-L(i,2)*x(i+col1)-L(i,5)*x(i+col2)-L(i,4)*x(i+col3)
-	end do
-	
-	do i=n-col4,1,-1
-		x(i)=x(i)-L(i,2)*x(i+col1)-L(i,5)*x(i+col2)-L(i,4)*x(i+col3)&
-		         -L(i,3)*x(i+col4)
-	end do
+do i=col2+1,col3
+	x(i)=y(i)-L(i-col1,2)*x(i-col1)-L(i-col2,5)*x(i-col2)
+end do
+do i=col3+1,col4
+	x(i)=y(i)-L(i-col1,2)*x(i-col1)-L(i-col2,5)*x(i-col2)&
+	         -L(i-col3,4)*x(i-col3)
+end do
 
-	return
+do i=col4+1,n
+	x(i)=y(i)-L(i-col1,2)*x(i-col1)-L(i-col2,5)*x(i-col2)&
+	         -L(i-col3,4)*x(i-col3)-L(i-col4,3)*x(i-col4)
+end do
+do i=n-col1,n-col2+1,-1
+	x(i)=x(i)-L(i,2)*x(i+col1)
+end do
+
+do i=n-col2,n-col3+1,-1
+	x(i)=x(i)-L(i,2)*x(i+col1)-L(i,5)*x(i+col2)
+end do
+
+do i=n-col3,n-col4+1,-1
+	x(i)=x(i)-L(i,2)*x(i+col1)-L(i,5)*x(i+col2)-L(i,4)*x(i+col3)
+end do
+
+do i=n-col4,1,-1
+	x(i)=x(i)-L(i,2)*x(i+col1)-L(i,5)*x(i+col2)-L(i,4)*x(i+col3)&
+	         -L(i,3)*x(i+col4)
+end do
+return
 
 END SUBROUTINE resLU_ell5
 
 
-
-
-
 SUBROUTINE matmul_ell(x,coef,jcoef,y,n,m)
 
-	implicit none
+implicit none
+integer, intent(in) :: n,m
+real*8, dimension(n,m), intent (in) :: coef
+integer, dimension(m), intent(in) :: jcoef
+real*8, dimension(n), intent(in) :: y
+real*8, dimension(n), intent(out) :: x
 
-	integer, intent(in) :: n,m
-	real*8, dimension(n,m), intent (in) :: coef
-	integer, dimension(m), intent(in) :: jcoef
-	real*8, dimension(n), intent(in) :: y
-	real*8, dimension(n), intent(out) :: x
-	
-	integer :: i,j,col
-
-	do i=1,n
-		x(i)=coef(i,1)*y(i)
+integer :: i,j,col
+do i=1,n
+	x(i)=coef(i,1)*y(i)
+end do
+do j=2,m
+	col=jcoef(j)
+	do i=1,n-col
+		x(i)=x(i)+coef(i,j)*y(i+col)
+		x(i+col)=x(i+col)+coef(i,j)*y(i)
 	end do
-
-	do j=2,m
-		col=jcoef(j)
-		do i=1,n-col
-			x(i)=x(i)+coef(i,j)*y(i+col)
-			x(i+col)=x(i+col)+coef(i,j)*y(i)
-		end do
-	end do
-
-	return
+end do
+return
 
 END SUBROUTINE matmul_ell
 
 
 FUNCTION scal(x,y,n) result(res)
 
-	implicit none
-
-	integer, intent(in) :: n
-	real*8, dimension(n), intent(in) :: x,y
-
-	integer :: i
-
-	real*8 :: res
-
-	res=0.
-	do i=1,n; res=res+x(i)*y(i); end do
+implicit none
+integer, intent(in) :: n
+real*8, dimension(n), intent(in) :: x,y
+integer :: i
+real*8 :: res
+res=0.
+do i=1,n; res=res+x(i)*y(i); end do
 
 END FUNCTION
 
 
 FUNCTION norm1(x,n) result(res)
 
-	implicit none
-
-	integer, intent(in) :: n
-	real*8, dimension(n), intent(in) :: x
-
-	integer :: i
-
-	real*8 :: res
-
-	res=0.
-	do i=1,n; res=res+x(i)*x(i); end do
+implicit none
+integer, intent(in) :: n
+real*8, dimension(n), intent(in) :: x
+integer :: i
+real*8 :: res
+res=0.
+do i=1,n; res=res+x(i)*x(i); end do
 
 END FUNCTION
 
 
 FUNCTION norm2(x,n) result(res)
 
-	implicit none
-
-	integer, intent(in) :: n
-	real*8, dimension(n), intent(in) :: x
-
-	integer :: i
-
-	real*8 :: res
-
-	res=0.
-	do i=1,n; res=res+x(i)*x(i); end do
-	res=sqrt(res)
+implicit none
+integer, intent(in) :: n
+real*8, dimension(n), intent(in) :: x
+integer :: i
+real*8 :: res
+res=0.
+do i=1,n; res=res+x(i)*x(i); end do
+res=sqrt(res)
 
 END FUNCTION

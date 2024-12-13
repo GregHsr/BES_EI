@@ -3,7 +3,7 @@
 FC = gfortran
 
 # Options de compilation: optimisation, debug etc...
-OPT = -fdefault-real-8  -C
+OPT = -fdefault-real-8  -C -g
 # nom de l'executable
 EXE = cavite.exe
 # Options de l'edition de lien..
@@ -15,7 +15,8 @@ OBJS =  \
        main.o \
        matgen_cavite.o \
        Solveur.o \
-       ensight_cavite.o
+       ensight_cavite.o \
+	   advection.o
 
 # Linking object files
 exe :   $(OBJS)
@@ -32,7 +33,9 @@ Solveur.o : Solveur.f90
 
 ensight_cavite.o : ensight_cavite.f90
 	$(FC) -c $(OPT) ensight_cavite.f90
-	
+
+advection.o : advection.f90
+	$(FC) -c $(OPT) advection.f90
 
 # Removing object files
 clean :
