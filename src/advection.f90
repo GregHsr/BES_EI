@@ -33,22 +33,20 @@ subroutine vitesse_tilt(un,vn,u_tilt,v_tilt,nx,ny)
     integer, intent(in) :: nx,ny
     real*8, dimension(0:nx+1,0:ny+1), intent(out) :: u_tilt,v_tilt
     integer :: i,j
-    do i=0,nx
-        do j=0,ny
+    do i=1,nx
+        do j=1,ny
             u_tilt(i,j) = 0.5*(un(i,j)+un(i+1,j))
             v_tilt(i,j) = 0.5*(vn(i,j)+vn(i,j+1))
         end do
     end do
-
-    write(*,*) v_tilt
 end subroutine vitesse_tilt
 
 
-subroutine vitesse_upwind(un,vn,u_tilt,v_tilt,nx,ny, dt, dx, dy)
+subroutine vitesse_upwind(un,vn,u_tilt,v_tilt,u_dif,v_dif,nx,ny, dt, dx, dy)
     implicit none
     integer, intent(in) :: nx,ny
     real*8, dimension(0:nx+1,0:ny+1), intent(inout) :: un,vn
-    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: u_tilt,v_tilt
+    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: u_tilt,v_tilt,u_dif,v_dif
     real*8, intent(in) :: dt,dx,dy
     real*8, dimension(0:nx+1,0:ny+1) :: u_temp, v_temp
     real*8 :: u_ouest, u_est, u_nord, u_sud
@@ -56,6 +54,36 @@ subroutine vitesse_upwind(un,vn,u_tilt,v_tilt,nx,ny, dt, dx, dy)
     integer :: i,j
 
     call initialize(u_temp,v_temp,nx,ny)
+
+    ! /!\ ATTENTION CONDITIONS LIMITES A IMPLEMENTER
+    do i=0,nx+1
+        do j=0,ny+1  
+            ! Condition Bas
+            if (j == 0) then
+                u_temp(i,0) = u_temp(i,1)
+                v_temp(i,0) = 0
+            end if
+            
+            ! Condition Gauche
+            if (i == 0) then
+                u_temp(0,j) = 0
+                v_temp(0,j) = - v_temp(1,j)
+            end if
+
+            ! Condition Droite
+            if (i == nx + 1) then
+                u_temp(nx,j) = 0
+                v_temp(nx+1,j) = - v_temp(nx,j)
+            end if
+
+            ! Condition Haut
+            if (j == ny + 1) then
+                u_temp(i,ny+1) = 2 - u_temp(i,ny)
+                v_temp(i,ny) = 0
+            end if
+        end do
+    end do
+
     ! Calcul U
     do i=1,nx-1
         do j=1,ny
@@ -174,38 +202,30 @@ subroutine vitesse_upwind(un,vn,u_tilt,v_tilt,nx,ny, dt, dx, dy)
         end do
     end do
 
-    ! /!\ ATTENTION CONDITIONS LIMITES A IMPLEMENTER
     do i=0,nx+1
-        do j=0,ny+1  
-            ! Condition Bas
-            if (j == 0) then
-                u_temp(i,0) = u_temp(i,1)
-                v_temp(i,0) = 0
-            end if
-            
-            ! Condition Gauche
-            if (i == 0) then
-                u_temp(0,j) = 0
-                v_temp(0,j) = - v_temp(1,j)
-            end if
+        do j=0,ny+1
+            un(i,j) = u_temp(i,j) + u_dif(i,j)
+            vn(i,j) = v_temp(i,j) + v_dif(i,j)
+        end do 
+    end do
+end subroutine vitesse_upwind    
 
-            ! Condition Droite
-            if (i == nx + 1) then
-                u_temp(nx,j) = 0
-                v_temp(nx+1,j) = - v_temp(nx,j)
-            end if
+subroutine diffusion(un,vn,u_dif,v_dif,dx,dy,nu,nx,ny)
+    implicit none 
+    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: un,vn
+    real*8, intent(in) :: dx,dy,nu
+    integer, intent(in) :: nx,ny
+    real*8, dimension(0:nx+1,0:ny+1), intent(out) :: u_dif, v_dif
+    integer :: i,j    
 
-            ! Condition Haut
-            if (j == ny + 1) then
-                u_temp(i,ny+1) = 2 - u_temp(i,ny)
-                v_temp(i,ny) = 0
-            end if
+    do i=1,nx-1
+        do j=1,ny
+            u_dif(i,j) = (nu/(dx*dx))*(un(i+1,j)-2*un(i,j)+un(i-1,j))+(nu/(dy*dy))*(un(i+1,j)-2*un(i,j)+un(i-1,j))
+            v_dif(i,j) = (nu/(dx*dx))*(vn(i+1,j)-2*vn(i,j)+vn(i-1,j))+(nu/(dy*dy))*(vn(i+1,j)-2*vn(i,j)+vn(i-1,j))
         end do
     end do
-
-    un = u_temp
-    vn = v_temp
-end subroutine vitesse_upwind    
+    write(*,*) u_dif
+end subroutine diffusion
 
 
 subroutine calcul_rhs(un,vn,dx,dy,dt,nx,ny,rhs)

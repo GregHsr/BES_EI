@@ -17,7 +17,7 @@ real*8 :: zeta,time
 real*8, dimension(1:nx) :: xx
 real*8, dimension(1:ny) :: yy
 real*8, dimension(1:nx,1:ny) :: rhs,pre,u_cent,v_cent,rot,div
-real*8, dimension(0:nx+1,0:ny+1) :: u,v
+real*8, dimension(0:nx+1,0:ny+1) :: u,v,u_dif,v_dif
 real*8 pi,sum,premoy,pamoy
 integer i,j,k,itmax,isto,istep,nstep
 	
@@ -61,7 +61,8 @@ do istep=0,nstep
 
 	!	ADVECTION
 	call vitesse_tilt(u,v,u_cent,v_cent,nx,ny)
-	call vitesse_upwind(u,v,u_cent,v_cent,nx,ny,dt,dx,dy)
+	call diffusion(u,v,u_dif,v_dif,dx,dy,nu,nx,ny)
+	call vitesse_upwind(u,v,u_cent,v_cent,u_dif,v_dif,nx,ny,dt,dx,dy)
 
 	!        Calcul du second membre de l'equation de pression
 	call calcul_rhs(u,v,rhs,dx,dy,dt,nx,ny)
