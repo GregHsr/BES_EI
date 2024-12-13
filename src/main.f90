@@ -12,7 +12,7 @@ real*8 ,dimension(1:ndim,1:5)::l_s
 integer, dimension(1:mdim):: jcoef
 integer, dimension(1:5):: ldiag
 
-real*8 :: dx,dy, dt, nu
+real*8 :: dx,dy, dt, nu, u_tmp, v_tmp
 real*8 :: zeta,time
 real*8, dimension(1:nx) :: xx
 real*8, dimension(1:ny) :: yy
@@ -45,7 +45,7 @@ call initialize(u,v,nx,ny)
 ! Initilisation de l'algorithme 
 istep=2
 isto=1
-nstep=1
+nstep=20
 dt = 0.1
 nu = 0.01
 
@@ -104,7 +104,20 @@ do istep=0,nstep
 	    enddo
 	enddo
 
+	do i=1,nx-1
+		do j=1,ny
+			u_tmp = u(i,j)/dt - pre(i,j)
+			u(i,j) = u_tmp
+		end do 
+	end do
+	do i=1,nx
+		do j=1,ny-1
+			v_tmp = v(i,j)/dt - pre(i,j)
+			v(i,j) = v_tmp
+		end do 
+	end do
 
+	call vitesse_tilt(u,v,u_cent,v_cent,nx,ny)
 	call write_result_ensight(xx,yy,u_cent,v_cent,rot,div,pre,nx,ny,nz,istep,isto,nstep)
 
 end do

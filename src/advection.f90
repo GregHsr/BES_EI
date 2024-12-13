@@ -39,6 +39,8 @@ subroutine vitesse_tilt(un,vn,u_tilt,v_tilt,nx,ny)
             v_tilt(i,j) = 0.5*(vn(i,j)+vn(i,j+1))
         end do
     end do
+
+    write(*,*) v_tilt
 end subroutine vitesse_tilt
 
 
@@ -54,7 +56,8 @@ subroutine vitesse_upwind(un,vn,u_tilt,v_tilt,nx,ny, dt, dx, dy)
     integer :: i,j
 
     call initialize(u_temp,v_temp,nx,ny)
-    do i=1,nx
+    ! Calcul U
+    do i=1,nx-1
         do j=1,ny
             ! Calcul des U au centre
             if (u_tilt(i,j) >= 0) then
@@ -106,13 +109,97 @@ subroutine vitesse_upwind(un,vn,u_tilt,v_tilt,nx,ny, dt, dx, dy)
                 v_sud = vn(i,j)
             end if
 
-            ! /!\ ATTENTION CONDITIONS LIMITES A IMPLEMENTER
-
             ! Calcul des vitesses au temps n+1
             u_temp(i,j) = un(i,j) - dt/dx*(u_tilt(i,j)*u_est - u_tilt(i-1,j)*u_ouest)&
                          - dt/dy*(v_tilt(i,j)*u_nord - v_tilt(i,j-1)*u_sud)
+        end do
+    end do  
+
+    ! Calcul V
+    do i=1,nx
+        do j=1,ny-1
+            ! Calcul des U au centre
+            if (u_tilt(i,j) >= 0) then
+                u_est = un(i,j)
+            else
+                u_est = un(i+1,j)
+            end if
+
+            if (u_tilt(i-1,j) >= 0) then
+                u_ouest = un(i-1,j)
+            else
+                u_ouest = un(i,j)
+            end if
+
+            if (v_tilt(i,j) >= 0) then
+                u_nord = un(i,j)
+            else
+                u_nord = un(i,j+1)
+            end if
+
+            if (v_tilt(i,j-1) >= 0) then
+                u_sud = un(i,j-1)
+            else
+                u_sud = un(i,j)
+            end if
+
+            ! Calcul des V au centre
+            if (u_tilt(i,j) >= 0) then
+                v_est = vn(i,j)
+            else
+                v_est = vn(i+1,j)
+            end if
+
+            if (u_tilt(i-1,j) >= 0) then
+                v_ouest = vn(i-1,j)
+            else
+                v_ouest = vn(i,j)
+            end if
+
+            if (v_tilt(i,j) >= 0) then
+                v_nord = vn(i,j)
+            else
+                v_nord = vn(i,j+1)
+            end if
+
+            if (v_tilt(i,j-1) >= 0) then
+                v_sud = vn(i,j-1)
+            else
+                v_sud = vn(i,j)
+            end if
+
+            ! Calcul des vitesses au temps n+1
             v_temp(i,j) = vn(i,j) - dt/dx*(u_tilt(i,j)*v_est - u_tilt(i-1,j)*v_ouest)&
                          - dt/dy*(v_tilt(i,j)*v_nord - v_tilt(i,j-1)*v_sud)
+        end do
+    end do
+
+    ! /!\ ATTENTION CONDITIONS LIMITES A IMPLEMENTER
+    do i=0,nx+1
+        do j=0,ny+1  
+            ! Condition Bas
+            if (j == 0) then
+                u_temp(i,0) = u_temp(i,1)
+                v_temp(i,0) = 0
+            end if
+            
+            ! Condition Gauche
+            if (i == 0) then
+                u_temp(0,j) = 0
+                v_temp(0,j) = - v_temp(1,j)
+            end if
+
+            ! Condition Droite
+            if (i == nx + 1) then
+                u_temp(nx,j) = 0
+                v_temp(nx+1,j) = - v_temp(nx,j)
+            end if
+
+            ! Condition Haut
+            if (j == ny + 1) then
+                u_temp(i,ny+1) = 2 - u_temp(i,ny)
+                v_temp(i,ny) = 0
+            end if
         end do
     end do
 
