@@ -217,14 +217,16 @@ subroutine diffusion(un,vn,u_dif,v_dif,dx,dy,nu,nx,ny)
     integer, intent(in) :: nx,ny
     real*8, dimension(0:nx+1,0:ny+1), intent(out) :: u_dif, v_dif
     integer :: i,j    
-
-    do i=1,nx-1
+    call initialize(u_dif,v_dif,nx,ny)
+    do i=1,nx
         do j=1,ny
-            u_dif(i,j) = (nu/(dx*dx))*(un(i+1,j)-2*un(i,j)+un(i-1,j))+(nu/(dy*dy))*(un(i+1,j)-2*un(i,j)+un(i-1,j))
-            v_dif(i,j) = (nu/(dx*dx))*(vn(i+1,j)-2*vn(i,j)+vn(i-1,j))+(nu/(dy*dy))*(vn(i+1,j)-2*vn(i,j)+vn(i-1,j))
+            u_dif(i,j) = (nu/(dx*dx))*(un(i+1,j)-2*un(i,j)+un(i-1,j))+(nu/(dy*dy))*(un(i,j+1)-2*un(i,j)+un(i,j-1))
+            v_dif(i,j) = (nu/(dx*dx))*(vn(i+1,j)-2*vn(i,j)+vn(i-1,j))+(nu/(dy*dy))*(vn(i,j+1)-2*vn(i,j)+vn(i,j-1))
         end do
     end do
-    write(*,*) u_dif
+    do i=1,ny
+    write(*,'(18F10.2)') u_dif(0:nx+1, i)
+    end do
 end subroutine diffusion
 
 
