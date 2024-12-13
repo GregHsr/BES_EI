@@ -1,6 +1,6 @@
 program main
 implicit none 
-integer ,parameter ::nx=16,ny=16,nz=1
+integer ,parameter ::nx=4,ny=4,nz=1
 !
 !  PARAMETRES ICCG
 !
@@ -40,7 +40,7 @@ do j=1,ny
 enddo
 
 !  Calcul des vitesses initiales
-call initialize(u,v,nx,ny)
+call initialize_un(u,v,nx,ny)
 
 ! Initilisation de l'algorithme 
 istep=2
@@ -62,10 +62,12 @@ do istep=0,nstep
 	!	ADVECTION
 	call vitesse_tilt(u,v,u_cent,v_cent,nx,ny)
 	call diffusion(u,v,u_dif,v_dif,dx,dy,nu,nx,ny)
+	write(*,*) 1
 	call vitesse_upwind(u,v,u_cent,v_cent,u_dif,v_dif,nx,ny,dt,dx,dy)
-
+	write(*,*) 2
 	!        Calcul du second membre de l'equation de pression
 	call calcul_rhs(u,v,rhs,dx,dy,dt,nx,ny)
+	write(*,*) 3
 
 	! 	  Calcul du rotationnel et de la divergence
 	call divergence(u,v,dx,dy,nx,ny,div)

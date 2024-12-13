@@ -7,9 +7,54 @@ subroutine initialize(un,vn,nx,ny)
         do j=0,ny+1
             un(i,j)=0.0
             vn(i,j)=0.0
-        enddo
-    enddo
+        end do
+    end do
 end subroutine initialize
+
+
+subroutine initialize_un(un,vn,nx,ny)
+    implicit none
+    real*8, dimension(0:nx+1,0:ny+1), intent(out) :: un,vn 
+    integer, intent(in) :: nx,ny
+    integer :: i,j
+    do i=0,nx+1
+        do j=0,ny+1
+            un(i,j)=0.0
+            vn(i,j)=0.0
+        end do
+    end do
+    ! /!\ ATTENTION CONDITIONS LIMITES A IMPLEMENTER
+    do i=0,nx+1
+        do j=0,ny+1  
+            ! Condition Bas
+            if (j == 0) then
+                un(i,0) = un(i,1)
+                vn(i,0) = 0
+            end if
+            
+            ! Condition Gauche
+            if (i == 0) then
+                un(0,j) = 0
+                vn(0,j) = - vn(1,j)
+            end if
+
+            ! Condition Droite
+            if (i == nx + 1) then
+                un(nx,j) = 0
+                vn(nx+1,j) = - vn(nx,j)
+            end if
+
+            ! Condition Haut
+            if (j == ny + 1) then
+                un(i,ny+1) = 2 - un(i,ny)
+                vn(i,ny) = 0
+            end if
+        end do
+    end do
+    do i=0,ny+1
+    write(*,'(6F10.2)') un(0:nx+1, i)
+    end do
+end subroutine initialize_un
 
 
 subroutine timestep(un,vn,nx,ny,dx,dy,dt,nu)
@@ -53,37 +98,8 @@ subroutine vitesse_upwind(un,vn,u_tilt,v_tilt,u_dif,v_dif,nx,ny, dt, dx, dy)
     real*8 :: v_ouest, v_est, v_nord, v_sud
     integer :: i,j
 
-    call initialize(u_temp,v_temp,nx,ny)
-
-    ! /!\ ATTENTION CONDITIONS LIMITES A IMPLEMENTER
-    do i=0,nx+1
-        do j=0,ny+1  
-            ! Condition Bas
-            if (j == 0) then
-                u_temp(i,0) = u_temp(i,1)
-                v_temp(i,0) = 0
-            end if
-            
-            ! Condition Gauche
-            if (i == 0) then
-                u_temp(0,j) = 0
-                v_temp(0,j) = - v_temp(1,j)
-            end if
-
-            ! Condition Droite
-            if (i == nx + 1) then
-                u_temp(nx,j) = 0
-                v_temp(nx+1,j) = - v_temp(nx,j)
-            end if
-
-            ! Condition Haut
-            if (j == ny + 1) then
-                u_temp(i,ny+1) = 2 - u_temp(i,ny)
-                v_temp(i,ny) = 0
-            end if
-        end do
-    end do
-
+    call initialize_un(u_temp,v_temp,nx,ny)
+    
     ! Calcul U
     do i=1,nx-1
         do j=1,ny
@@ -224,9 +240,7 @@ subroutine diffusion(un,vn,u_dif,v_dif,dx,dy,nu,nx,ny)
             v_dif(i,j) = (nu/(dx*dx))*(vn(i+1,j)-2*vn(i,j)+vn(i-1,j))+(nu/(dy*dy))*(vn(i,j+1)-2*vn(i,j)+vn(i,j-1))
         end do
     end do
-    do i=1,ny
-    write(*,'(18F10.2)') u_dif(0:nx+1, i)
-    end do
+
 end subroutine diffusion
 
 
@@ -239,7 +253,7 @@ subroutine calcul_rhs(un,vn,dx,dy,dt,nx,ny,rhs)
     integer :: i,j
     do i=1,nx
         do j=1,ny
-            rhs(i,j) = ((un(i,j) - un(i-1,j))/dx + (vn(i,j) - vn(i,j-1))/dy)/dt
+            rhs(i,j) = ((un(i,j) - un(i-1,j))/dx + (vn(i,j) - vn(i,j-1))/dy)/dt    
         end do
     end do
 end subroutine calcul_rhs
