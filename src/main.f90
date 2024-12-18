@@ -56,18 +56,17 @@ div=0.
 
 do istep=0,nstep
 	!   TIMESTEP
-	call timestep(u,v,nx,ny,dx,dy,dt, nu)
+	call timestep(u,v,nx,ny,dx,dy,dt,nu)
 	write(*,*) "dt = ",dt
 
 	!	ADVECTION
-	call vitesse_tilt(u,v,u_cent,v_cent,nx,ny)
 	call diffusion(u,v,u_dif,v_dif,dx,dy,nu,nx,ny)
-	write(*,*) 1
-	call vitesse_upwind(u,v,u_cent,v_cent,u_dif,v_dif,nx,ny,dt,dx,dy)
-	write(*,*) 2
+
+	call vitesse_upwind(u,v,u_dif,v_dif,nx,ny,dt,dx,dy)
+
 	!        Calcul du second membre de l'equation de pression
 	call calcul_rhs(u,v,rhs,dx,dy,dt,nx,ny)
-	write(*,*) 3
+
 
 	! 	  Calcul du rotationnel et de la divergence
 	call divergence(u,v,dx,dy,nx,ny,div)
@@ -120,7 +119,6 @@ do istep=0,nstep
 		end do 
 	end do
 
-	call vitesse_tilt(u,v,u_cent,v_cent,nx,ny)
 	call write_result_ensight(xx,yy,u_cent,v_cent,rot,div,pre,nx,ny,nz,istep,isto,nstep)
 
 end do

@@ -1,7 +1,7 @@
 subroutine initialize(un,vn,nx,ny) 
     implicit none
-    real*8, dimension(0:nx+1,0:ny+1), intent(out) :: un,vn 
     integer, intent(in) :: nx,ny
+    real*8, dimension(0:nx+1,0:ny+1), intent(out) :: un,vn 
     integer :: i,j
     do i=0,nx+1
         do j=0,ny+1
@@ -14,8 +14,8 @@ end subroutine initialize
 
 subroutine initialize_un(un,vn,nx,ny)
     implicit none
-    real*8, dimension(0:nx+1,0:ny+1), intent(out) :: un,vn 
     integer, intent(in) :: nx,ny
+    real*8, dimension(0:nx+1,0:ny+1), intent(out) :: un,vn 
     integer :: i,j
     do i=0,nx+1
         do j=0,ny+1
@@ -65,37 +65,39 @@ subroutine timestep(un,vn,nx,ny,dx,dy,dt,nu)
     real*8, intent(in) :: dx,dy,nu
     real*8, intent(out) :: dt
     real*8 :: umax, vmax
+    integer :: i,j
 
-    umax = maxval(abs(un(:,:)))
-    vmax = maxval(abs(vn(:,:)))
-    dt = 1.0/(2*(umax/dx + vmax/dy) + 2*nu*(1/(dx*dx) + 1/(dy*dy)))
+    umax = 0.0
+    vmax = 0.0
+
+    do i = 0, nx+1
+        do j = 0, ny+1
+            if (abs(un(i,j)) > umax) then
+                umax = abs(un(i,j))
+            end if
+            if (abs(vn(i,j)) > vmax) then
+                vmax = abs(vn(i,j))
+            end if
+        end do
+    end do
+
+    dt = 1.0 / (2.0 * (umax / dx + vmax / dy) + 2.0 * nu * (1.0 / (dx * dx) + 1.0 / (dy * dy)))
+    
 end subroutine timestep
             
 
-subroutine vitesse_tilt(un,vn,u_tilt,v_tilt,nx,ny)
-    implicit none
-    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: un,vn
-    integer, intent(in) :: nx,ny
-    real*8, dimension(0:nx+1,0:ny+1), intent(out) :: u_tilt,v_tilt
-    integer :: i,j
-    do i=1,nx
-        do j=1,ny
-            u_tilt(i,j) = 0.5*(un(i,j)+un(i+1,j))
-            v_tilt(i,j) = 0.5*(vn(i,j)+vn(i,j+1))
-        end do
-    end do
-end subroutine vitesse_tilt
 
-
-subroutine vitesse_upwind(un,vn,u_tilt,v_tilt,u_dif,v_dif,nx,ny, dt, dx, dy)
+subroutine vitesse_upwind(un,vn,u_dif,v_dif,nx,ny, dt, dx, dy)
     implicit none
     integer, intent(in) :: nx,ny
     real*8, dimension(0:nx+1,0:ny+1), intent(inout) :: un,vn
-    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: u_tilt,v_tilt,u_dif,v_dif
+    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: u_dif,v_dif
     real*8, intent(in) :: dt,dx,dy
     real*8, dimension(0:nx+1,0:ny+1) :: u_temp, v_temp
-    real*8 :: u_ouest, u_est, u_nord, u_sud
-    real*8 :: v_ouest, v_est, v_nord, v_sud
+    real*8 :: u_west, u_est, u_nord, u_sud
+    real*8 :: v_west, v_est, v_nord, v_sud
+    real*8 :: u_tilt_nord, u_tilt_sud, u_tilt_west, u_tilt_est
+    real*8 :: v_tilt_nord, v_tilt_sud, v_tilt_west, v_tilt_est
     integer :: i,j
 
     call initialize_un(u_temp,v_temp,nx,ny)
@@ -103,154 +105,122 @@ subroutine vitesse_upwind(un,vn,u_tilt,v_tilt,u_dif,v_dif,nx,ny, dt, dx, dy)
     ! Calcul U
     do i=1,nx-1
         do j=1,ny
-            ! Calcul des U au centre
-            if (u_tilt(i,j) >= 0) then
+            u_tilt_est = 0.5*(un(i,j)+un(i+1,j))
+            u_tilt_west = 0.5*(un(i-1,j)+un(i,j))
+            v_tilt_nord = 0.5*(vn(i,j)+vn(i+1,j))
+            v_tilt_sud = 0.5*(vn(i,j-1)+vn(i+1,j-1))
+            
+            
+            if (u_tilt_est >= 0) then
                 u_est = un(i,j)
             else
                 u_est = un(i+1,j)
             end if
 
-            if (u_tilt(i-1,j) >= 0) then
-                u_ouest = un(i-1,j)
+            if (u_tilt_west >= 0) then
+                u_west = un(i-1,j)
             else
-                u_ouest = un(i,j)
+                u_west = un(i,j)
             end if
 
-            if (v_tilt(i,j) >= 0) then
+            if (v_tilt_nord >= 0) then
                 u_nord = un(i,j)
             else
                 u_nord = un(i,j+1)
             end if
 
-            if (v_tilt(i,j-1) >= 0) then
+            if (v_tilt_sud >= 0) then
                 u_sud = un(i,j-1)
             else
                 u_sud = un(i,j)
             end if
-
-            ! Calcul des V au centre
-            if (u_tilt(i,j) >= 0) then
-                v_est = vn(i,j)
-            else
-                v_est = vn(i+1,j)
-            end if
-
-            if (u_tilt(i-1,j) >= 0) then
-                v_ouest = vn(i-1,j)
-            else
-                v_ouest = vn(i,j)
-            end if
-
-            if (v_tilt(i,j) >= 0) then
-                v_nord = vn(i,j)
-            else
-                v_nord = vn(i,j+1)
-            end if
-
-            if (v_tilt(i,j-1) >= 0) then
-                v_sud = vn(i,j-1)
-            else
-                v_sud = vn(i,j)
-            end if
-
+            
             ! Calcul des vitesses au temps n+1
-            u_temp(i,j) = un(i,j) - dt/dx*(u_tilt(i,j)*u_est - u_tilt(i-1,j)*u_ouest)&
-                         - dt/dy*(v_tilt(i,j)*u_nord - v_tilt(i,j-1)*u_sud)
+            u_temp(i,j) = un(i,j) - dt/dx*(u_tilt_est*u_est - u_tilt_west*u_west)&
+                         - dt/dy*(v_tilt_nord*u_nord - v_tilt_sud*u_sud)
+                         
+            un(i,j) = u_temp(i,j) + u_dif(i,j)
+                         
         end do
     end do  
+    
 
     ! Calcul V
     do i=1,nx
         do j=1,ny-1
-            ! Calcul des U au centre
-            if (u_tilt(i,j) >= 0) then
-                u_est = un(i,j)
-            else
-                u_est = un(i+1,j)
-            end if
-
-            if (u_tilt(i-1,j) >= 0) then
-                u_ouest = un(i-1,j)
-            else
-                u_ouest = un(i,j)
-            end if
-
-            if (v_tilt(i,j) >= 0) then
-                u_nord = un(i,j)
-            else
-                u_nord = un(i,j+1)
-            end if
-
-            if (v_tilt(i,j-1) >= 0) then
-                u_sud = un(i,j-1)
-            else
-                u_sud = un(i,j)
-            end if
-
-            ! Calcul des V au centre
-            if (u_tilt(i,j) >= 0) then
+            u_tilt_est = 0.5*(un(i,j)+un(i,j+1))
+            u_tilt_west = 0.5*(un(i-1,j)+un(i-1,j+1))
+            v_tilt_nord = 0.5*(vn(i,j)+vn(i,j+1))
+            v_tilt_sud = 0.5*(vn(i,j-1)+vn(i,j))
+            
+            if (u_tilt_est >= 0) then
                 v_est = vn(i,j)
             else
                 v_est = vn(i+1,j)
             end if
 
-            if (u_tilt(i-1,j) >= 0) then
-                v_ouest = vn(i-1,j)
+            if (u_tilt_west >= 0) then
+                v_west = vn(i-1,j)
             else
-                v_ouest = vn(i,j)
+                v_west = vn(i,j)
             end if
 
-            if (v_tilt(i,j) >= 0) then
+            if (v_tilt_nord >= 0) then
                 v_nord = vn(i,j)
             else
                 v_nord = vn(i,j+1)
             end if
 
-            if (v_tilt(i,j-1) >= 0) then
+            if (v_tilt_sud >= 0) then
                 v_sud = vn(i,j-1)
             else
                 v_sud = vn(i,j)
             end if
 
             ! Calcul des vitesses au temps n+1
-            v_temp(i,j) = vn(i,j) - dt/dx*(u_tilt(i,j)*v_est - u_tilt(i-1,j)*v_ouest)&
-                         - dt/dy*(v_tilt(i,j)*v_nord - v_tilt(i,j-1)*v_sud)
+            v_temp(i,j) = vn(i,j) - dt/dx*(u_tilt_est*v_est - u_tilt_west*v_west)&
+                         - dt/dy*(v_tilt_nord*v_nord - v_tilt_sud*v_sud)
+                         
+            vn(i,j) = v_temp(i,j) + v_dif(i,j)    
+                  
+                         
         end do
-    end do
-
-    do i=0,nx+1
-        do j=0,ny+1
-            un(i,j) = u_temp(i,j) + u_dif(i,j)
-            vn(i,j) = v_temp(i,j) + v_dif(i,j)
-        end do 
-    end do
+    end do    
+    
+write(*,'(6F10.2)') un
+write(*,*) 
+write(*,'(6F10.2)') vn
+    
+    
 end subroutine vitesse_upwind    
 
-subroutine diffusion(un,vn,u_dif,v_dif,dx,dy,nu,nx,ny)
+subroutine diffusion(un,vn,u_dif,v_dif,dx,dy,dt,nu,nx,ny)
     implicit none 
-    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: un,vn
-    real*8, intent(in) :: dx,dy,nu
     integer, intent(in) :: nx,ny
+    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: un,vn
+    real*8, intent(in) :: dx,dy,nu,dt
     real*8, dimension(0:nx+1,0:ny+1), intent(out) :: u_dif, v_dif
     integer :: i,j    
     call initialize(u_dif,v_dif,nx,ny)
     do i=1,nx
         do j=1,ny
-            u_dif(i,j) = (nu/(dx*dx))*(un(i+1,j)-2*un(i,j)+un(i-1,j))+(nu/(dy*dy))*(un(i,j+1)-2*un(i,j)+un(i,j-1))
-            v_dif(i,j) = (nu/(dx*dx))*(vn(i+1,j)-2*vn(i,j)+vn(i-1,j))+(nu/(dy*dy))*(vn(i,j+1)-2*vn(i,j)+vn(i,j-1))
+            u_dif(i,j) = ((nu/(dx*dx))*(un(i+1,j)-2*un(i,j)+un(i-1,j))+(nu/(dy*dy))*(un(i,j+1)-2*un(i,j)+un(i,j-1)))*dt
+            v_dif(i,j) = ((nu/(dx*dx))*(vn(i+1,j)-2*vn(i,j)+vn(i-1,j))+(nu/(dy*dy))*(vn(i,j+1)-2*vn(i,j)+vn(i,j-1)))*dt
         end do
     end do
 
 end subroutine diffusion
 
 
-subroutine calcul_rhs(un,vn,dx,dy,dt,nx,ny,rhs)
+subroutine calcul_rhs(un,vn,rhs,dx,dy,dt,nx,ny)
     implicit none
-    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: un,vn
-    real*8, intent(in) :: dx,dy,dt
     integer, intent(in) :: nx,ny
+    real*8, dimension(0:nx+1,0:ny+1), intent(inout) :: un,vn
+    real*8, intent(in) :: dx,dy,dt
     real*8, dimension(0:nx+1,0:ny+1), intent(out) :: rhs
     integer :: i,j
+    write(*,*) un(1,0)
+    write(*,*) un(1,1)
     do i=1,nx
         do j=1,ny
             rhs(i,j) = ((un(i,j) - un(i-1,j))/dx + (vn(i,j) - vn(i,j-1))/dy)/dt    
@@ -261,9 +231,9 @@ end subroutine calcul_rhs
 
 subroutine divergence(un,vn,dx,dy,nx,ny,div)
     implicit none
+    integer, intent(in) :: nx,ny
     real*8, dimension(0:nx+1,0:ny+1), intent(in) :: un,vn
     real*8, intent(in) :: dx,dy
-    integer, intent(in) :: nx,ny
     real*8, dimension(1:nx,1:ny), intent(out) :: div
     integer :: i,j
 
@@ -278,9 +248,9 @@ end subroutine divergence
 
 subroutine rotationnel(un,vn,dx,dy,nx,ny,rot)
     implicit none
+    integer, intent(in) :: nx,ny
     real*8, dimension(0:nx+1,0:ny+1), intent(in) :: un,vn
     real*8, intent(in) :: dx,dy
-    integer, intent(in) :: nx,ny
     real*8, dimension(1:nx,1:ny), intent(out) :: rot
     integer :: i,j
 
