@@ -24,37 +24,65 @@ subroutine initialize_un(un,vn,nx,ny)
         end do
     end do
     ! /!\ ATTENTION CONDITIONS LIMITES A IMPLEMENTER
-    do i=0,nx+1
-        do j=0,ny+1  
-            ! Condition Bas
-            if (j == 0) then
-                un(i,0) = un(i,1)
-                vn(i,0) = 0
-            end if
-            
-            ! Condition Gauche
-            if (i == 0) then
-                un(0,j) = 0
-                vn(0,j) = - vn(1,j)
-            end if
-
-            ! Condition Droite
-            if (i == nx + 1) then
-                un(nx,j) = 0
-                vn(nx+1,j) = - vn(nx,j)
-            end if
-
-            ! Condition Haut
-            if (j == ny + 1) then
-                un(i,ny+1) = 2 - un(i,ny)
-                vn(i,ny) = 0
-            end if
-        end do
+    do i=1,nx
+   	 ! Condition Bas
+    	un(i,0) = - un(i,1)
+        vn(i,0) = 0
+        
+        ! Condition Haut
+        un(i,ny+1) = 2 - un(i,ny)
+        vn(i,ny) = 0
+    end do        
+                
+    do j=1,ny
+	    ! Condition Gauche
+	    un(0,j) = 0
+        vn(0,j) = - vn(1,j)
+        
+        ! Condition Droite
+	    un(nx,j) = 0
+        vn(nx+1,j) = - vn(nx,j)      
     end do
+   
     do i=0,ny+1
-    write(*,'(6F10.2)') un(0:nx+1, i)
+    !write(*,'(6F10.2)') un(0:nx+1, i)
     end do
+    
 end subroutine initialize_un
+
+
+subroutine boundaries(un,vn,nx,ny)
+    implicit none
+    integer, intent(in) :: nx,ny
+    real*8, dimension(0:nx+1,0:ny+1), intent(inout) :: un,vn 
+    integer :: i,j
+    ! /!\ ATTENTION CONDITIONS LIMITES A IMPLEMENTER
+    do i=1,nx
+   	 ! Condition Bas
+    	un(i,0) = - un(i,1)
+        vn(i,0) = 0
+        
+        ! Condition Haut
+        un(i,ny+1) = 2 - un(i,ny)
+        vn(i,ny) = 0
+    end do        
+                
+    do j=1,ny
+	    ! Condition Gauche
+	    un(0,j) = 0
+        vn(0,j) = - vn(1,j)
+        
+        ! Condition Droite
+	    un(nx,j) = 0
+        vn(nx+1,j) = - vn(nx,j)      
+    end do
+   
+    do i=0,ny+1
+    !write(*,'(6F10.2)') un(0:nx+1, i)
+    end do
+    
+end subroutine boundaries
+
 
 
 subroutine timestep(un,vn,nx,ny,dx,dy,dt,nu)
@@ -100,8 +128,6 @@ subroutine vitesse_upwind(un,vn,u_dif,v_dif,nx,ny, dt, dx, dy)
     real*8 :: v_tilt_nord, v_tilt_sud, v_tilt_west, v_tilt_est
     integer :: i,j
 
-    call initialize_un(u_temp,v_temp,nx,ny)
-    
     ! Calcul U
     do i=1,nx-1
         do j=1,ny
@@ -182,16 +208,9 @@ subroutine vitesse_upwind(un,vn,u_dif,v_dif,nx,ny, dt, dx, dy)
                          - dt/dy*(v_tilt_nord*v_nord - v_tilt_sud*v_sud)
                          
             vn(i,j) = v_temp(i,j) + v_dif(i,j)    
-                  
                          
         end do
     end do    
-    
-write(*,'(6F10.2)') un
-write(*,*) 
-write(*,'(6F10.2)') vn
-    
-    
 end subroutine vitesse_upwind    
 
 subroutine diffusion(un,vn,u_dif,v_dif,dx,dy,dt,nu,nx,ny)
@@ -201,7 +220,8 @@ subroutine diffusion(un,vn,u_dif,v_dif,dx,dy,dt,nu,nx,ny)
     real*8, intent(in) :: dx,dy,nu,dt
     real*8, dimension(0:nx+1,0:ny+1), intent(out) :: u_dif, v_dif
     integer :: i,j    
-    call initialize(u_dif,v_dif,nx,ny)
+    u_dif=0
+    v_dif=0
     do i=1,nx
         do j=1,ny
             u_dif(i,j) = ((nu/(dx*dx))*(un(i+1,j)-2*un(i,j)+un(i-1,j))+(nu/(dy*dy))*(un(i,j+1)-2*un(i,j)+un(i,j-1)))*dt
@@ -215,12 +235,12 @@ end subroutine diffusion
 subroutine calcul_rhs(un,vn,rhs,dx,dy,dt,nx,ny)
     implicit none
     integer, intent(in) :: nx,ny
-    real*8, dimension(0:nx+1,0:ny+1), intent(inout) :: un,vn
+    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: un,vn
     real*8, intent(in) :: dx,dy,dt
     real*8, dimension(0:nx+1,0:ny+1), intent(out) :: rhs
+    real*8, dimension(1:nx,1:ny) :: div
     integer :: i,j
-    write(*,*) un(1,0)
-    write(*,*) un(1,1)
+    call divergence(un,vn,dx,dy,nx,ny,div)
     do i=1,nx
         do j=1,ny
             rhs(i,j) = ((un(i,j) - un(i-1,j))/dx + (vn(i,j) - vn(i,j-1))/dy)/dt    
