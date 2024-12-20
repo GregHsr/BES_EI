@@ -3,3 +3,4 @@
 sortie*
 *.vec
 *.scl
+src/*.dat
