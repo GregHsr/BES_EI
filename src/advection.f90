@@ -281,3 +281,14 @@ subroutine rotationnel(un,vn,dx,dy,nx,ny,rot)
     end do
 
 end subroutine rotationnel
+
+subroutine read_data(Re, Nx, Schema)
+    implicit none
+    integer, intent(out) :: Nx, Schema
+    real*8, intent(out) :: Re
+    open(10, file='data_template.txt')
+    read(10,*) Re
+    read(10,*) Nx
+    read(10,*) Schema
+    close(10)
+end subroutine read_data

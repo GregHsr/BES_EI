@@ -1,28 +1,52 @@
 program main
 implicit none 
-integer ,parameter ::nx=100,ny=100,nz=1
+integer ,parameter ::mdim=3,nz = 1
+
+integer ::nx,ny,ndim
 !
 !  PARAMETRES ICCG
 !
-integer ,parameter ::ndim = nx*ny,mdim=3
-real*8 ,dimension(1:ndim,1:mdim) :: coef 
-real*8 ,dimension(1:ndim) :: rhs1,p_s,r_s,r2_s
-real*8 ,dimension(1:ndim) :: q_s,s_s,x1
-real*8 ,dimension(1:ndim,1:5)::l_s
-integer, dimension(1:mdim):: jcoef
-integer, dimension(1:5):: ldiag
+real*8 ,dimension(:,:), allocatable :: coef 
+real*8 ,dimension(:), allocatable :: rhs1,p_s,r_s,r2_s
+real*8 ,dimension(:), allocatable :: q_s,s_s,x1
+real*8 ,dimension(:,:), allocatable ::l_s
+integer, dimension(:), allocatable :: jcoef
+integer, dimension(:), allocatable :: ldiag
 
 real*8 :: dx,dy, dt, nu, u_tmp, v_tmp, nrj_n, nrj_n1, conv, tf
-real*8 :: zeta,time
-real*8, dimension(1:nx) :: xx
-real*8, dimension(1:ny) :: yy
-real*8, dimension(1:nx,1:ny) :: rhs,pre,u_cent,v_cent,rot,div
-real*8, dimension(0:nx+1,0:ny+1) :: u,v,u_dif,v_dif
+real*8 :: zeta,time,Re_lu
+real*8, dimension(:), allocatable :: xx
+real*8, dimension(:), allocatable :: yy
+real*8, dimension(:,:), allocatable :: rhs,pre,u_cent,v_cent,rot,div
+real*8, dimension(:,:), allocatable :: u,v,u_dif,v_dif
 real*8 pi,sum,premoy,pamoy
 integer i,j,k,itmax,isto,istep,nstep
+integer Nx_lu, Schema_lu, script
 	
 external ICCG2
-	
+
+script=0
+if (script == 1) then
+	call read_data(Re_lu, Nx_lu, Schema_lu)
+else
+	Re_lu = 100
+	Nx_lu = 100
+	Schema_lu = 1
+end if
+
+nx = Nx_lu
+ny = Nx_lu
+ndim = nx*ny
+
+! Allouer les tableaux
+allocate(u(0:nx+1,0:ny+1),v(0:nx+1,0:ny+1),u_dif(0:nx+1,0:ny+1),v_dif(0:nx+1,0:ny+1))
+allocate(u_cent(1:nx,1:ny),v_cent(1:nx,1:ny),rot(1:nx,1:ny),div(1:nx,1:ny))
+allocate(rhs(1:nx,1:ny),pre(1:nx,1:ny))
+allocate(xx(1:nx),yy(1:ny))
+
+allocate(coef(1:ndim,1:mdim),rhs1(1:ndim),p_s(1:ndim),r_s(1:ndim),r2_s(1:ndim))
+allocate(q_s(1:ndim),s_s(1:ndim),x1(1:ndim),l_s(1:ndim,1:5),jcoef(1:mdim),ldiag(1:5))
+
 pi=4.*atan(1.)
 time=0.
 tf=0.
@@ -50,7 +74,9 @@ istep=0
 isto=100
 nstep=20000
 dt = 0.
-nu = 0.01
+write(*,*) "Re = ",Re_lu
+nu = 1/Re_lu
+write(*,*) "nu = ",nu
 
 u_cent=0.d0
 v_cent=0.d0   
@@ -180,5 +206,8 @@ do j=1,ny
 	write(2,*) yy(j), u_cent(nx/2,j)
 end do
 close(2)
+
+deallocate(u,v,u_dif,v_dif,u_cent,v_cent,rot,div,rhs,pre,xx,yy)
+deallocate(coef,rhs1,p_s,r_s,r2_s,q_s,s_s,x1,l_s,jcoef,ldiag)
 
 end 
