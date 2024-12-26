@@ -5,7 +5,7 @@ make
 #!/bin/bash
 
 # Définition des listes
-list_re=(100 , 200)
+list_re=(100 200)
 list_nx=(100)
 list_schema=(1)
 
