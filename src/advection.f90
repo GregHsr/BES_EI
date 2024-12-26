@@ -286,7 +286,7 @@ subroutine read_data(Re, Nx, Schema)
     implicit none
     integer, intent(out) :: Nx, Schema
     real*8, intent(out) :: Re
-    open(10, file='data_template.txt')
+    open(10, file='data.txt')
     read(10,*) Re
     read(10,*) Nx
     read(10,*) Schema
