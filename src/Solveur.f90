@@ -136,8 +136,8 @@ end do
 do i=1,n; x(i)=x(i)*L(i,1); end do
     if(j.ge.itmax) then
    		print*, 'non convergence apres =', j,norm
-    else
-   		print*, ' Nombre Iterations ICCG2 ( Fill-In 2 ) =', j
+    ! else
+   	! 	print*, ' Nombre Iterations ICCG2 ( Fill-In 2 ) =', j
 	endif
 return
 

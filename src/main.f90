@@ -25,12 +25,12 @@ integer Nx_lu, Schema_lu, script
 	
 external ICCG2
 
-script=0
+script=1
 if (script == 1) then
 	call read_data(Re_lu, Nx_lu, Schema_lu)
 else
 	Re_lu = 100
-	Nx_lu = 100
+	Nx_lu = 20
 	Schema_lu = 1
 end if
 
@@ -71,12 +71,12 @@ call initialize_un(u,v,nx,ny)
 
 ! Initilisation de l'algorithme 
 istep=0
-isto=100
+isto=500
 nstep=20000
 dt = 0.
-write(*,*) "Re = ",Re_lu
+! write(*,*) "Re = ",Re_lu
 nu = 1/Re_lu
-write(*,*) "nu = ",nu
+! write(*,*) "nu = ",nu
 
 u_cent=0.d0
 v_cent=0.d0   
@@ -86,7 +86,7 @@ div=0.
 do istep=0,nstep
 	!   TIMESTEP
 	call timestep(u,v,nx,ny,dx,dy,dt,nu)
-	write(*,*) "dt = ",dt
+	! write(*,*) "dt = ",dt
 	time=time+dt
 
 	!	ADVECTION
@@ -176,10 +176,11 @@ do istep=0,nstep
 	conv=abs(nrj_n-nrj_n1)/dt
 	nrj_n=nrj_n1
 
-	write(*,*) "Convergence = ",conv
+	! write(*,*) "Convergence = ",conv
 
 	if (conv.lt.1.e-4) then
 		write(*,*) "Convergence atteinte en ",istep," iterations"
+		write(*,*) "Time step stockage", isto
 		exit
 	end if
 
