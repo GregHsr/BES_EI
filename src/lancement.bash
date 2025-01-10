@@ -10,7 +10,7 @@ list_re=(100 1000 5000 10000)
 list_nx=(100 200 300)
 list_schema=(1 2)
 
-istock=10
+istock=10000
 case_file="sortieEnsight.case"
 
 # Nom du fichier modèle
@@ -43,11 +43,16 @@ for re in "${list_re[@]}"; do
       mkdir -p "$output_dir"
       
       # Exécution de cavite.exe et capture de la sortie
+      start=$(date +%s)
       output=$(./cavite.exe)
+      end=$(date +%s)
+      runtime=$((end-start))
 
       echo "$output" >> script.log
       echo "$output"
-      
+      echo "Temps d'exécution : $runtime secondes" >> script.log
+      echo "Temps d'exécution : $runtime secondes"
+
       # Extraction des valeurs nécessaires de la sortie
       iterations=$(echo "$output" | grep -oP 'Convergence atteinte en\s+\K[0-9]+')
       time_step_stockage=$(echo "$output" | grep -oP 'Time step stockage\s+\K[0-9]+')
