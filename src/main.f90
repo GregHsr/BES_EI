@@ -183,7 +183,7 @@ do istep=0,nstep
 	! write(*,*) "Convergence = ",conv
 	write(3,*) conv
 
-	if (conv.lt.1.e-4 .and. istep>10000) then
+	if (conv.lt.1.e-6 .and. istep>10000) then
 		write(*,*) "Convergence atteinte en ",istep," iterations"
 		write(*,*) "Time step stockage", isto
 		exit
@@ -215,5 +215,6 @@ close(2)
 
 deallocate(u,v,u_dif,v_dif,u_cent,v_cent,rot,div,rhs,pre,xx,yy)
 deallocate(coef,rhs1,p_s,r_s,r2_s,q_s,s_s,x1,l_s,jcoef,ldiag)
+close(3)
 
 end 
