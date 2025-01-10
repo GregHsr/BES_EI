@@ -29,9 +29,9 @@ script=0
 if (script == 1) then
 	call read_data(Re_lu, Nx_lu, Schema_lu)
 else
-	Re_lu = 10000
-	Nx_lu = 100
-	Schema_lu = 1
+	Re_lu = 100
+	Nx_lu = 10
+	Schema_lu = 1 !1=upwind !2=centré
 end if
 
 nx = Nx_lu
@@ -71,7 +71,7 @@ call initialize_un(u,v,nx,ny)
 
 ! Initilisation de l'algorithme 
 istep=0
-isto=1000
+isto=10
 nstep=40000
 dt = 0.
 write(*,*) "Re = ",Re_lu
@@ -92,7 +92,13 @@ do istep=0,nstep
 	!	ADVECTION
 	call diffusion(u,v,u_dif,v_dif,dx,dy,dt,nu,nx,ny)
 
-	call vitesse_upwind(u,v,u_dif,v_dif,nx,ny,dt,dx,dy)
+
+	if (Schema_lu == 1) then
+		call vitesse_upwind(u,v,u_dif,v_dif,nx,ny,dt,dx,dy)
+	else
+		call vitesse_centre(u,v,u_dif,v_dif,nx,ny,dt,dx,dy)
+	end if
+	
 
 	call boundaries(u,v,nx,ny)
 

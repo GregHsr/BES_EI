@@ -213,6 +213,76 @@ subroutine vitesse_upwind(un,vn,u_dif,v_dif,nx,ny, dt, dx, dy)
     end do    
 end subroutine vitesse_upwind    
 
+
+subroutine vitesse_centre(un,vn,u_dif,v_dif,nx,ny, dt, dx, dy)
+    implicit none
+    integer, intent(in) :: nx,ny
+    real*8, dimension(0:nx+1,0:ny+1), intent(inout) :: un,vn
+    real*8, dimension(0:nx+1,0:ny+1), intent(in) :: u_dif,v_dif
+    real*8, intent(in) :: dt,dx,dy
+    real*8, dimension(0:nx+1,0:ny+1) :: u_temp, v_temp
+    real*8 :: u_west, u_est, u_nord, u_sud
+    real*8 :: v_west, v_est, v_nord, v_sud
+    real*8 :: u_tilt_nord, u_tilt_sud, u_tilt_west, u_tilt_est
+    real*8 :: v_tilt_nord, v_tilt_sud, v_tilt_west, v_tilt_est
+    integer :: i,j
+
+    ! Calcul U
+    do i=1,nx-1
+        do j=1,ny
+            u_tilt_est = 0.5*(un(i,j)+un(i+1,j))
+            u_tilt_west = 0.5*(un(i-1,j)+un(i,j))
+            v_tilt_nord = 0.5*(vn(i,j)+vn(i+1,j))
+            v_tilt_sud = 0.5*(vn(i,j-1)+vn(i+1,j-1))
+            
+            u_est = (un(i,j)+un(i+1,j))/2
+            
+            u_west = (un(i-1,j)+un(i,j))/2
+            
+            u_nord = (un(i,j)+un(i,j+1))/2
+            
+            u_sud = (un(i,j-1)+un(i,j))/2
+              
+            
+            ! Calcul des vitesses au temps n+1
+            u_temp(i,j) = un(i,j) - dt/dx*(u_tilt_est*u_est - u_tilt_west*u_west)&
+                         - dt/dy*(v_tilt_nord*u_nord - v_tilt_sud*u_sud)
+                         
+            un(i,j) = u_temp(i,j) + u_dif(i,j)
+                         
+        end do
+    end do  
+    
+
+    ! Calcul V
+    do i=1,nx
+        do j=1,ny-1
+            u_tilt_est = 0.5*(un(i,j)+un(i,j+1))
+            u_tilt_west = 0.5*(un(i-1,j)+un(i-1,j+1))
+            v_tilt_nord = 0.5*(vn(i,j)+vn(i,j+1))
+            v_tilt_sud = 0.5*(vn(i,j-1)+vn(i,j))
+            
+            v_est = (vn(i,j)+vn(i+1,j))/2
+            
+            v_west = (vn(i-1,j)+vn(i,j))/2
+            
+            v_nord = (vn(i,j)+vn(i,j+1))/2
+            
+            v_sud = (vn(i,j-1)+vn(i,j))/2
+          
+
+            ! Calcul des vitesses au temps n+1
+            v_temp(i,j) = vn(i,j) - dt/dx*(u_tilt_est*v_est - u_tilt_west*v_west)&
+                         - dt/dy*(v_tilt_nord*v_nord - v_tilt_sud*v_sud)
+                         
+            vn(i,j) = v_temp(i,j) + v_dif(i,j)    
+                         
+        end do
+    end do    
+end subroutine vitesse_centre  
+
+
+
 subroutine diffusion(un,vn,u_dif,v_dif,dx,dy,dt,nu,nx,ny)
     implicit none 
     integer, intent(in) :: nx,ny
