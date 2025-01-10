@@ -6,3 +6,4 @@ sortie*
 src/*.dat
 src/Re*/*
 utils/*.png
+src/script.log

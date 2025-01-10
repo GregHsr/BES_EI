@@ -1,16 +1,16 @@
 make clean 
-rm -f *.scl *.vec *.dat sortieEnsight.* 
-make
+rm -f *.scl *.vec *.dat sortieEnsight.* script.log
+make >> script.log
 
 #!/bin/bash
 
 # Définition des listes
 # Re=100    Re=400   Re=1000  Re=3200 Re=5000  Re=7500  Re=10000
-list_re=(7500 10000)
-list_nx=(100)
-list_schema=(1)
+list_re=(100 1000 5000 10000)
+list_nx=(100 200 300)
+list_schema=(1 2)
 
-istock=1000
+istock=10
 case_file="sortieEnsight.case"
 
 # Nom du fichier modèle
@@ -36,6 +36,7 @@ for re in "${list_re[@]}"; do
           -e "s/@Schema@/$schema/g" \
           "$template_file" > "data.txt"
 
+      echo "Fichier de configuration généré : $output_file" >> script.log
       echo "Fichier de configuration généré : $output_file"
 
       # Création du dossier de sortie
@@ -44,6 +45,7 @@ for re in "${list_re[@]}"; do
       # Exécution de cavite.exe et capture de la sortie
       output=$(./cavite.exe)
 
+      echo "$output" >> script.log
       echo "$output"
       
       # Extraction des valeurs nécessaires de la sortie
@@ -51,7 +53,7 @@ for re in "${list_re[@]}"; do
       time_step_stockage=$(echo "$output" | grep -oP 'Time step stockage\s+\K[0-9]+')
 
       if [[ ! -f $case_file ]]; then
-        echo "Le fichier $case_file n'existe pas."
+        echo "Le fichier $case_file n'existe pas." >> script.log
         exit 1
       fi
       
@@ -61,9 +63,13 @@ for re in "${list_re[@]}"; do
       nb_st=$(($number_of_steps + 1))
       last_line=$((18 + $nb_st))
 
-      echo "Nombre d'itérations : $iterations"
-      echo "Nombre de steps : $number_of_steps"
-      echo "Dernier temps : $last_time"
+      echo "Nombre d'itérations : $iterations" >> script.log
+      echo "Nombre de steps : $number_of_steps" >> script.log
+      echo "Dernier temps : $last_time" >> script.log
+
+      echo "Nombre d'itérations : $iterations" 
+      echo "Nombre de steps : $number_of_steps" 
+      echo "Dernier temps : $last_time" 
 
       sed -i "s/number of steps: *[0-9]\+/number of steps:     $number_of_steps/" "$case_file"
       sed -i "${last_line},\$d" "$case_file"
@@ -72,6 +78,7 @@ for re in "${list_re[@]}"; do
       for ext in "*.scl" "*.vec" "*.dat" "sortieEnsight.*" "data_*_*_*.txt"; do
         mv $ext "$output_dir/" 2>/dev/null || echo "Aucun fichier $ext à déplacer pour $output_file"
       done
+      echo "Fichiers déplacés dans le dossier : $output_dir" >> script.log
       echo "Fichiers déplacés dans le dossier : $output_dir"
     done
   done

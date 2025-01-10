@@ -25,7 +25,7 @@ integer Nx_lu, Schema_lu, script
 	
 external ICCG2
 
-script=0
+script=1
 if (script == 1) then
 	call read_data(Re_lu, Nx_lu, Schema_lu)
 else
@@ -71,8 +71,8 @@ call initialize_un(u,v,nx,ny)
 
 ! Initilisation de l'algorithme 
 istep=0
-isto=10
-nstep=40000
+isto=10000
+nstep=500000
 dt = 0.
 write(*,*) "Re = ",Re_lu
 nu = 1/Re_lu
@@ -177,9 +177,9 @@ do istep=0,nstep
 	conv=abs(nrj_n-nrj_n1)/dt
 	nrj_n=nrj_n1
 
-	write(*,*) "Convergence = ",conv
+	! write(*,*) "Convergence = ",conv
 
-	if (conv.lt.1.e-4 .and. istep>500) then
+	if (conv.lt.1.e-4 .and. istep>10000) then
 		write(*,*) "Convergence atteinte en ",istep," iterations"
 		write(*,*) "Time step stockage", isto
 		exit
