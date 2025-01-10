@@ -4,3 +4,5 @@ sortie*
 *.vec
 *.scl
 src/*.dat
+src/Re*/*
+utils/*.png

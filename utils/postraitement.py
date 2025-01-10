@@ -6,10 +6,10 @@ import pandas as pd
 #%% Read data
 # Read documentation values
 
-u_ghia = pd.read_csv('Prof_u_Ghia_Re_100_a_10000.dat', sep='\s+')
+u_ghia = pd.read_csv('utils/Prof_u_Ghia_Re_100_a_10000.dat', sep='\s+')
 y_ghia = u_ghia['y']
 
-v_ghia = pd.read_csv('Prof_v_Ghia_Re_100_a_10000.dat', sep='\s+')
+v_ghia = pd.read_csv('utils/Prof_v_Ghia_Re_100_a_10000.dat', sep='\s+')
 x_ghia = v_ghia['x']
 print(v_ghia)
 

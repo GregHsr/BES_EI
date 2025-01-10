@@ -25,12 +25,12 @@ integer Nx_lu, Schema_lu, script
 	
 external ICCG2
 
-script=1
+script=0
 if (script == 1) then
 	call read_data(Re_lu, Nx_lu, Schema_lu)
 else
-	Re_lu = 100
-	Nx_lu = 20
+	Re_lu = 10000
+	Nx_lu = 100
 	Schema_lu = 1
 end if
 
@@ -71,12 +71,12 @@ call initialize_un(u,v,nx,ny)
 
 ! Initilisation de l'algorithme 
 istep=0
-isto=500
-nstep=20000
+isto=1000
+nstep=40000
 dt = 0.
-! write(*,*) "Re = ",Re_lu
+write(*,*) "Re = ",Re_lu
 nu = 1/Re_lu
-! write(*,*) "nu = ",nu
+write(*,*) "nu = ",nu
 
 u_cent=0.d0
 v_cent=0.d0   
@@ -103,11 +103,6 @@ do istep=0,nstep
     	end do
    	end do
     	!write(*,'(4F10.2)') rhs
-
-
-	! 	  Calcul du rotationnel et de la divergence
-	call divergence(u,v,dx,dy,nx,ny,div)
-	call rotationnel(u,v,dx,dy,nx,ny,rot)
 
 	!	GENERATION DE LA MATRICE des coef de l 'equation de pression
 
@@ -176,9 +171,9 @@ do istep=0,nstep
 	conv=abs(nrj_n-nrj_n1)/dt
 	nrj_n=nrj_n1
 
-	! write(*,*) "Convergence = ",conv
+	write(*,*) "Convergence = ",conv
 
-	if (conv.lt.1.e-4) then
+	if (conv.lt.1.e-4 .and. istep>500) then
 		write(*,*) "Convergence atteinte en ",istep," iterations"
 		write(*,*) "Time step stockage", isto
 		exit

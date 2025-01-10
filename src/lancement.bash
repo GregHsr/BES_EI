@@ -5,11 +5,12 @@ make
 #!/bin/bash
 
 # Définition des listes
-list_re=(100 200)
+# Re=100    Re=400   Re=1000  Re=3200 Re=5000  Re=7500  Re=10000
+list_re=(7500 10000)
 list_nx=(100)
 list_schema=(1)
 
-istock=500
+istock=1000
 case_file="sortieEnsight.case"
 
 # Nom du fichier modèle
@@ -22,7 +23,7 @@ for re in "${list_re[@]}"; do
       
       # Nom du fichier de configuration et du dossier de sortie
       output_file="data_${re}_${nx}_${schema}.txt"
-      output_dir="${re}_${nx}_${schema}"
+      output_dir="Re_${re}_Nx_${nx}_Sc_${schema}"
 
       # Remplacement des valeurs et création du fichier de configuration
       sed -e "s/@Re@/$re/g" \
