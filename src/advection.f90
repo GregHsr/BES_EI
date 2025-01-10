@@ -292,3 +292,52 @@ subroutine read_data(Re, Nx, Schema)
     read(10,*) Schema
     close(10)
 end subroutine read_data
+
+
+subroutine divergence_petsc(un, vn, dx, dy, nx, ny, div, da)
+    use petsc
+    implicit none
+
+    ! Arguments
+    integer, intent(in) :: nx, ny
+    real(PetscReal), intent(in) :: dx, dy
+    DM, intent(in) :: da
+    Vec, intent(in) :: un, vn
+    Vec, intent(out) :: div
+
+    ! Variables locales
+    real(PetscReal), pointer :: un_local(:,:), vn_local(:,:), div_local(:,:)
+    integer :: xs, ys, xm, ym   ! Indices des sous-domaines
+    integer :: i, j             ! Boucles
+    PetscErrorCode :: ierr      ! Code d'erreur
+
+    ! Obtenir les indices locaux pour le sous-domaine
+    call DMDAGetCorners(da, xs, ys, xm, ym, ierr)
+    call CHKERRQ(ierr)
+
+    ! Obtenir les pointeurs vers les tableaux locaux
+    call DMDAVecGetArray(da, un, un_local, ierr)
+    call CHKERRQ(ierr)
+    call DMDAVecGetArray(da, vn, vn_local, ierr)
+    call CHKERRQ(ierr)
+    call DMDAVecGetArray(da, div, div_local, ierr)
+    call CHKERRQ(ierr)
+
+    ! Calcul local de la divergence
+    do i = xs, xs + xm - 1
+        do j = ys, ys + ym - 1
+            div_local(i, j) = (un_local(i+1, j) - un_local(i, j)) / dx + &
+                              (vn_local(i, j+1) - vn_local(i, j)) / dy
+        end do
+    end do
+
+    ! Rendre les pointeurs
+    call DMDAVecRestoreArray(da, un, un_local, ierr)
+    call CHKERRQ(ierr)
+    call DMDAVecRestoreArray(da, vn, vn_local, ierr)
+    call CHKERRQ(ierr)
+    call DMDAVecRestoreArray(da, div, div_local, ierr)
+    call CHKERRQ(ierr)
+end subroutine divergence_petsc
+
+

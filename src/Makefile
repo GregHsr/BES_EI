@@ -1,46 +1,58 @@
-# Makefile 
 # Nom du compilateur
 FC = gfortran
 
-# Options de compilation: optimisation, debug etc...
-OPT = -fdefault-real-8  -O3
-# nom de l'executable
+# Options de compilation : optimisation, debug, etc.
+OPT = -fdefault-real-8 -fcheck=all -g
+ #-O3
+
+# Nom de l'exécutable
 EXE = cavite.exe
-# Options de l'edition de lien..
-LINKOPT =  
 
-# Defining the objects (OBJS) variables
+# Variables pour PETSc
+PETSC_DIR = /home/greg/install/petsc      
+PETSC_ARCH = arch-linux-c-debug 
 
+# Inclure les fichiers d'en-tête PETSc
+INCLUDE = -I/home/greg/install/petsc/include -I/home/greg/install/petsc/arch-linux-c-debug/include
+
+# Lien avec les bibliothèques PETSc
+LIBS = -L$(PETSC_DIR)/$(PETSC_ARCH)/lib -lpetsc
+
+# Options d'édition de lien (ajout des bibliothèques PETSc)
+LINKOPT = $(LIBS)
+
+# Fichiers objets
 OBJS =  \
        main.o \
        matgen_cavite.o \
        Solveur.o \
        ensight_cavite.o \
-	   advection.o
+       advection.o
 
-# Linking object files
-exe :   $(OBJS)
-	$(FC) $(LINKOPT) $(MODS) $(OBJS)  -o $(EXE) 
+# Cible principale : génération de l'exécutable
+exe : $(OBJS)
+	$(FC) $(LINKOPT) $(OBJS) -o $(EXE)
 
+# Règles pour compiler les fichiers sources
 main.o : main.f90
-	$(FC) -c $(OPT)  main.f90
+	$(FC) -c $(OPT) $(INCLUDE) main.f90
 
 matgen_cavite.o : matgen_cavite.f90
-	$(FC) -c $(OPT) matgen_cavite.f90
+	$(FC) -c $(OPT) $(INCLUDE) matgen_cavite.f90
 
 Solveur.o : Solveur.f90
-	$(FC) -c $(OPT) Solveur.f90
+	$(FC) -c $(OPT) $(INCLUDE) Solveur.f90
 
 ensight_cavite.o : ensight_cavite.f90
-	$(FC) -c $(OPT) ensight_cavite.f90
+	$(FC) -c $(OPT) $(INCLUDE) ensight_cavite.f90
 
 advection.o : advection.f90
-	$(FC) -c $(OPT) advection.f90
+	$(FC) -c $(OPT) $(INCLUDE) advection.f90
 
-# Removing object files
+# Cible pour nettoyer les fichiers objets et modules
 clean :
-	/bin/rm -f $(OBJS) $(EXE)  *.mod
+	rm -f $(OBJS) $(EXE) *.mod
 
+# Configuration : création des répertoires pour les fichiers objets et d'exécution
 config :
-	if [ ! -d obj ] ; then mkdir obj ; fi
-	if [ ! -d run ] ; then mkdir run ; fi
+	mkdir -p obj run

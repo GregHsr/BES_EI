@@ -29,8 +29,8 @@ script=0
 if (script == 1) then
 	call read_data(Re_lu, Nx_lu, Schema_lu)
 else
-	Re_lu = 10000
-	Nx_lu = 100
+	Re_lu = 100
+	Nx_lu = 10
 	Schema_lu = 1
 end if
 
