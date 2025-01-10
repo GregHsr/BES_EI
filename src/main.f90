@@ -29,7 +29,7 @@ script=1
 if (script == 1) then
 	call read_data(Re_lu, Nx_lu, Schema_lu)
 else
-	Re_lu = 100
+	Re_lu = 101
 	Nx_lu = 10
 	Schema_lu = 1 !1=upwind !2=centré
 end if
@@ -82,6 +82,9 @@ u_cent=0.d0
 v_cent=0.d0   
 rot=0.
 div=0.
+
+open(3,file='residus.dat')
+write(3,*) 'Energie Cinétique'
 
 do istep=0,nstep
 	!   TIMESTEP
@@ -178,6 +181,7 @@ do istep=0,nstep
 	nrj_n=nrj_n1
 
 	! write(*,*) "Convergence = ",conv
+	write(3,*) conv
 
 	if (conv.lt.1.e-4 .and. istep>10000) then
 		write(*,*) "Convergence atteinte en ",istep," iterations"
