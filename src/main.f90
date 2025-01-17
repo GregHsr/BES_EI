@@ -52,7 +52,7 @@ time=0.
 tf=0.
 nrj_n=0.
 nrj_n1=0.
-zeta=1.e-8
+zeta=1.e-6 ! possible à -6 -7
 itmax=300
 	
 dx=1./float(nx)
@@ -139,6 +139,7 @@ do istep=0,nstep
 
 	call ICCG2(coef,jcoef,l_s,Ldiag,rhs1,x1, &
 	  	       ndim,mdim,zeta,p_s,r_s,r2_s,q_s,s_s,itmax)
+
 	k=1
 	do j=1,ny 
 	   do i=1,nx 
