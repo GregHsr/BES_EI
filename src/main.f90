@@ -26,7 +26,7 @@ integer Nx_lu, Schema_lu, script
 	
 external ICCG2
 
-script=0
+script=1
 if (script == 1) then
 	call read_data(Re_lu, Nx_lu, Schema_lu)
 else
@@ -190,8 +190,10 @@ do istep=0,nstep
 		end do
 	end do
 	nrj_n1=nrj_n1/(nx*ny)
-
 	conv=abs(nrj_n-nrj_n1)/dt
+	conv_pres1=conv_pres1**0.5/(dt*nx*ny)
+	conv_vit1=conv_vit1/(dt*nx*ny)
+
 	nrj_n=nrj_n1
 
 	do i=1,nx
