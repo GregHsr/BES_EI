@@ -13,19 +13,20 @@ real*8 ,dimension(:,:), allocatable ::l_s
 integer, dimension(:), allocatable :: jcoef
 integer, dimension(:), allocatable :: ldiag
 
-real*8 :: dx,dy, dt, nu, u_tmp, v_tmp, nrj_n, nrj_n1, conv, tf
+real*8 :: dx,dy, dt, nu, u_tmp, v_tmp, tf
 real*8 :: zeta,time,Re_lu
 real*8, dimension(:), allocatable :: xx
 real*8, dimension(:), allocatable :: yy
-real*8, dimension(:,:), allocatable :: rhs,pre,u_cent,v_cent,rot,div
-real*8, dimension(:,:), allocatable :: u,v,u_dif,v_dif
+real*8, dimension(:,:), allocatable :: rhs,pre,pre_old,u_cent,v_cent,rot,div
+real*8, dimension(:,:), allocatable :: u,v,u_dif,v_dif, u_mag_old
 real*8 pi,sum,premoy,pamoy
+real*8 conv_pres1, conv_pres2, conv_vit1, conv_vit2,nrj_n, nrj_n1, conv
 integer i,j,k,itmax,isto,istep,nstep
 integer Nx_lu, Schema_lu, script
 	
 external ICCG2
 
-script=1
+script=0
 if (script == 1) then
 	call read_data(Re_lu, Nx_lu, Schema_lu)
 else
@@ -39,9 +40,9 @@ ny = Nx_lu
 ndim = nx*ny
 
 ! Allouer les tableaux
-allocate(u(0:nx+1,0:ny+1),v(0:nx+1,0:ny+1),u_dif(0:nx+1,0:ny+1),v_dif(0:nx+1,0:ny+1))
+allocate(u(0:nx+1,0:ny+1),v(0:nx+1,0:ny+1),u_dif(0:nx+1,0:ny+1),v_dif(0:nx+1,0:ny+1),u_mag_old(0:nx+1,0:ny+1))
 allocate(u_cent(1:nx,1:ny),v_cent(1:nx,1:ny),rot(1:nx,1:ny),div(1:nx,1:ny))
-allocate(rhs(1:nx,1:ny),pre(1:nx,1:ny))
+allocate(rhs(1:nx,1:ny),pre(1:nx,1:ny),pre_old(1:nx,1:ny))
 allocate(xx(1:nx),yy(1:ny))
 
 allocate(coef(1:ndim,1:mdim),rhs1(1:ndim),p_s(1:ndim),r_s(1:ndim),r2_s(1:ndim))
@@ -66,6 +67,13 @@ do j=1,ny
 	yy(j)=(j-0.5)*dy
 enddo
 
+do i=1,nx
+	do j=1,ny
+		pre_old(i,j)=0.
+		u_mag_old(i,j)=0.
+	end do
+end do
+
 !  Calcul des vitesses initiales
 call initialize_un(u,v,nx,ny)
 
@@ -84,7 +92,7 @@ rot=0.
 div=0.
 
 open(3,file='residus.dat')
-write(3,*) 'Energie Cinétique'
+write(3,*) 'Energie Cinétique, Pression, Vitesse'
 
 do istep=0,nstep
 	!   TIMESTEP
@@ -168,12 +176,17 @@ do istep=0,nstep
 			v_cent(i,j)=(v(i,j-1)+v(i,j))/2
 		end do
 	end do
-	
+
 	! Vérification de la convergence à l'aide de l'énergie cinétique
 	nrj_n1=0.
+	conv_pres1=0.
+	conv_vit1=0.
+
 	do i=1,nx
 		do j=1,ny
 			nrj_n1=nrj_n1+0.5*(u(i,j)**2+v(i,j)**2)
+			conv_pres1=conv_pres1+(pre_old(i,j)-pre(i,j))**2
+			conv_vit1=conv_vit1+(u_mag_old(i,j)-(u(i,j)**2+v(i,j)**2)**0.5)
 		end do
 	end do
 	nrj_n1=nrj_n1/(nx*ny)
@@ -181,8 +194,15 @@ do istep=0,nstep
 	conv=abs(nrj_n-nrj_n1)/dt
 	nrj_n=nrj_n1
 
+	do i=1,nx
+		do j=1,ny
+			pre_old(i,j)=pre(i,j)
+			u_mag_old(i,j)=(u(i,j)**2+v(i,j)**2)**0.5
+		end do
+	end do
+
 	! write(*,*) "Convergence = ",conv
-	write(3,*) conv
+	write(3,*) conv, conv_pres1, conv_vit1
 
 	if (conv.lt.1.e-6 .and. istep>10000) then
 		write(*,*) "Convergence atteinte en ",istep," iterations"

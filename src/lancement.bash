@@ -1,14 +1,18 @@
+#!/bin/bash
+
 make clean 
 rm -f *.scl *.vec *.dat sortieEnsight.* script.log
 make >> script.log
 
-#!/bin/bash
-
 # Définition des listes
 # Re=100    Re=400   Re=1000  Re=3200 Re=5000  Re=7500  Re=10000
-list_re=(100 1000 5000 10000)
-list_nx=(100 200 300)
-list_schema=(1 2)
+#list_re=(100 1000 5000 10000)
+#list_nx=(100 200 300)
+#list_schema=(1 2)
+
+list_re=(100 101)
+list_nx=(10)
+list_schema=(1)
 
 istock=10000
 case_file="sortieEnsight.case"
